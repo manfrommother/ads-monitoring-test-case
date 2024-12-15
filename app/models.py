@@ -31,3 +31,43 @@ class AdvertCount(Base):
     count = Column(DateTime, default=datetime.utcnow)
 
     query = relationship('SearchQuery', back_populates='counts')
+
+class TopAdvertisement(Base):
+    ''' Модель для хранения топ 5 объявлений'''
+    __tablename__ = 'top_advertisements'
+
+    id = Column(Integer, primary_key=True, index=True)
+    query_id = Column(Integer, ForeignKey('searcg_queries.id'), nullable=False)
+    title = Column(String, nullable=False)
+    price = Column(String)
+    url = Column(String, nullable=False)
+    additional_info = Column(JSON)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    query = relationship('SearchQuery', back_populates='top_ads')
+
+#Pydantic модели для валидации входящих\исходящих данных
+class SearchQuertCreate(BaseModel):
+    '''Схема для создания нового поиска'''
+    search_phrase: str = Field(..., min_length=1, max_length=255)
+    region: str = Field(..., min_length=1, max_length=100)
+
+class SearchQueryResponse(SearchQuertCreate):
+    '''Схема ответа после создания поиска'''
+
+    id: int
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class AdvertCountResponse(BaseModel):
+    '''схема для возврата топ объявлений'''
+    title: str
+    price: Optional[str]
+    url: str
+    additional_info: Optional[dict]
+    timestamp: datetime
+
+    class Config:
+        orm_mode = True
