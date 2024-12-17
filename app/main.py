@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from datetime import datetime, timedelta
 
-from .models import SearchQueryCreate, SearchQueryResponse, AdvertCountResponse, TopAdvertisement
+from .models import SearchQueryCreate, SearchQueryResponse, AdvertCountResponse, TopAdvertisementResponse
 from .crud import DatabaseManager
 from .parser import AvitoParser
 from .config import settings
@@ -58,4 +58,35 @@ async def get_query_statistics(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@app.get('/top/{query_id}', response_model=List[TopAd])
+@app.get('/top/{query_id}', response_model=List[TopAdvertisementResponse])
+async def get_top_advertisements(
+    query_id: int,
+    limit: int=5,
+    db: AsyncSession=Depends(DatabaseManager.get_db)
+):
+    '''Получение топ объявлений для конкретного запроса'''
+
+    try:
+        query = await DatabaseManager.get_search_query_by_id(db, query_id)
+        if not query:
+            raise HTTPException(status_code=404, detail='Запрос не найден')
+        
+        top_ads = await DatabaseManager.get_top_advertisements(db, query_id, limit)
+
+        return top_ads
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.on_event('startup')
+async def startup():
+    '''Обработчик запуска приложения'''
+    pass
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(
+        'main:app',
+        host=settings.APP_HOST,
+        port=settings.APP_PORT,
+        reload=True
+    )

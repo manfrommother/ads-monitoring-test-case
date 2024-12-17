@@ -51,7 +51,7 @@ class DatabaseManager:
         return SearchQueryResponse.model_validate(db_query)
     
     @staticmethod
-    async def get_search_query_bu_id(
+    async def get_search_query_by_id(
         session: AsyncSession,
         query_id: int
     ) -> Optional[SearchQuery]:
