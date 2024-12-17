@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
+from datetime import datetime, timedelta
 
 from .models import SearchQueryCreate, SearchQueryResponse, AdvertCountResponse, TopAdvertisement
 from .crud import DatabaseManager
@@ -21,4 +22,40 @@ async def add_search_query(
     db: AsyncSession=Depends(DatabaseManager.get_db)
 ):
     '''Регистрация нового поискового запроса'''
-    pass
+    try:
+        created_query = await DatabaseManager.create_search_query(db, query)
+
+        total_ads = await parser.get_total_ads_count(query.search_phrase, query.region)
+        await DatabaseManager.save_advert_count(db, created_query.id, total_ads)
+
+        top_ads = await parser.get_top_advertisements(query.search_phrase, query.region)
+        await DatabaseManager.save_top_advertisements(db, created_query.id, top_ads)
+
+        return created_query
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get('/stat/{query_id}', response_model=List[AdvertCountResponse])
+async def get_query_statistics(
+    query_id: int,
+    days: int=30,
+    db: AsyncSession=Depends(DatabaseManager.get_db)
+):
+    '''Получение статистики объявлений для конкретного запроса'''
+
+    try:
+        query = await DatabaseManager.get_search_query_bu_id(db, query_id)
+        if not query:
+            raise HTTPException(status_code=404, detail='Запрос не найден')
+        
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+
+        stats = await DatabaseManager.get_advert_counts(
+            db, query_id, start_date, end_date
+        )
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get('/top/{query_id}', response_model=List[TopAd])
