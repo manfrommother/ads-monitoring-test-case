@@ -47,12 +47,12 @@ class TopAdvertisement(Base):
     query = relationship('SearchQuery', back_populates='top_ads')
 
 #Pydantic модели для валидации входящих\исходящих данных
-class SearchQuertCreate(BaseModel):
+class SearchQueryCreate(BaseModel):
     '''Схема для создания нового поиска'''
     search_phrase: str = Field(..., min_length=1, max_length=255)
     region: str = Field(..., min_length=1, max_length=100)
 
-class SearchQueryResponse(SearchQuertCreate):
+class SearchQueryResponse(SearchQueryCreate):
     '''Схема ответа после создания поиска'''
 
     id: int
