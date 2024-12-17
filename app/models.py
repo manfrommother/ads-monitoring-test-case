@@ -71,3 +71,17 @@ class AdvertCountResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+class TopAdvertisementResponse(BaseModel):
+    """
+    Схема ответа для топ-объявлений
+    """
+    id: int
+    title: str
+    price: Optional[str] = None
+    url: str
+    additional_info: Optional[dict] = None
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
